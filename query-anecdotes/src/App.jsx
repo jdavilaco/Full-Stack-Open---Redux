@@ -1,10 +1,29 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useReducer } from 'react'
 
 import { getAnecdotes, updateAnecdote } from './requests'
 import AnecdoteForm from './components/AnecdoteForm'
 import Notification from './components/Notification'
+import AlertContext from './alertContext'
+
+const notificationReducer = (state, action) => {
+  switch (action.type) {
+    case 'NEW':
+      return state = {message: `New anecdote: '${action.content}', created`, class: 'success'}
+    case 'VOTE':
+      return state = {message: `You voted '${action.content}'`, class: 'success'}
+    case 'ERROR':
+      return state = {message: `System error: '${action.content}'`, class: 'error'}
+    case 'REMOVE': 
+      return state = {message: null, class: null}
+    default:
+      return state
+  }
+}
+
 
 const App = () => {
+  const [alert, alertDispatch] = useReducer(notificationReducer, {message: null, class: null})
   const queryClient = useQueryClient()
   const updateAnecdoteMutation = useMutation({ 
     mutationFn: updateAnecdote,
@@ -13,9 +32,14 @@ const App = () => {
     }
   })
 
-  const handleVote = (anecdote) => {
+  const handleVote = (anecdote, dispatch) => {
     updateAnecdoteMutation.mutate({ ...anecdote, votes: anecdote.votes + 1 })
-    console.log('vote')
+
+    dispatch({type: 'VOTE', content: anecdote.content})
+    setTimeout(() => {
+      dispatch({type: 'REMOVE'})
+    }, 5*1000)             
+    console.log('vote', anecdote.content)
   }
 
   const result = useQuery({
@@ -37,24 +61,26 @@ const App = () => {
   const anecdotes = result.data
 
   return (
-    <div>
-      <h3>Anecdote app</h3>
-    
-      <Notification />
-      <AnecdoteForm />
-    
-      {anecdotes.map(anecdote =>
-        <div key={anecdote.id}>
-          <div>
-            {anecdote.content}
+    <AlertContext.Provider value={[alert, alertDispatch]}>
+      <div>
+        <h3>Anecdote app</h3>
+      
+        <Notification  />
+        <AnecdoteForm />
+      
+        {anecdotes.map(anecdote =>
+          <div key={anecdote.id}>
+            <div>
+              {anecdote.content}
+            </div>
+            <div>
+              has {anecdote.votes}
+              <button onClick={() => handleVote(anecdote, alertDispatch)}>vote</button>
+            </div>
           </div>
-          <div>
-            has {anecdote.votes}
-            <button onClick={() => handleVote(anecdote)}>vote</button>
-          </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </AlertContext.Provider>
   )
 }
 

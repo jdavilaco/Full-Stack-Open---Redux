@@ -1,4 +1,8 @@
+import { useContext } from 'react'
+import AlertContext from '../alertContext'
+
 const Notification = () => {
+  const [alert, dispatch] = useContext(AlertContext)
   const style = {
     border: 'solid',
     padding: 10,
@@ -6,11 +10,11 @@ const Notification = () => {
     marginBottom: 5
   }
   
-  if (true) return null
+  if (alert.message == null) return null
 
   return (
     <div style={style}>
-      
+      {alert.message}
     </div>
   )
 }
